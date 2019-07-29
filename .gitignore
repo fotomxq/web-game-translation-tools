@@ -1,4 +1,2 @@
-/lanauage.spec
-/dist
-/build
-/__pycache__
+/.idea
+*.exe
