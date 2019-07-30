@@ -10,6 +10,7 @@ import glob
 import time
 import json
 import os
+import re
 
 ##########################################################
 # Config
@@ -127,6 +128,12 @@ NowReplaceFileSrc = ''
 # need replace content
 # eg: [{'src': 'english', 'dest': 'chinese'}]
 WaitReplace = []
+# wait write english data
+WaitEnglishData = []
+# skip word
+WaitEnglishSkip = ['<', '>', '你', '我', '它']
+# allow english take
+AllowWaitEnglish = False
 
 # get language file data
 excel = GetExcel('./languages/' + Language + '.xlsx')
@@ -149,7 +156,7 @@ for sheetKey in range(0, len(excel.sheets())):
 
 # find game-src file list
 def SearchListFromGame(path, newPath):
-    global ReplaceCount, ReplaceTotal, NowReplaceFileSrc, WaitReplace
+    global ReplaceCount, ReplaceTotal, NowReplaceFileSrc, WaitReplace, WaitEnglishData, WaitEnglishSkip
     dirs = os.listdir(path)
     for fileName in dirs:
         fileSrc = path + '/' + fileName
@@ -172,7 +179,35 @@ def SearchListFromGame(path, newPath):
                 # replace content
                 ReplaceCount = 0
                 newFileData = ReplaceContent(fileData)
-                print('replace count: ' + str(ReplaceCount) + ', total: ' + str(ReplaceTotal))
+                # get english data
+                # .*?(?<!\bMr\b)[\.\?](?=\s+(?:[A-Z]|$))
+                pattern = re.compile('.*?(?<!\bMr\b)[\.\?](?=\s+(?:[A-Z]|$))')
+                englishData = pattern.findall(newFileData)
+                englishDataCount = 0
+                if englishData and AllowWaitEnglish:
+                    englishDataCount = len(englishData)
+                    for mathKey in range(0, len(englishData)):
+                        if not englishData[mathKey]:
+                            continue
+                        isFind = False
+                        for mathFindKey in range(0, len(WaitEnglishSkip)):
+                            vFind = re.match(WaitEnglishSkip[mathFindKey], englishData[mathKey])
+                            if vFind:
+                                isFind = True
+                                break
+                        if isFind:
+                            continue
+                        englishData[mathKey] = englishData[mathKey].lstrip()
+                        englishData[mathKey] = englishData[mathKey].rstrip()
+                        if WaitEnglishData:
+                            for waitEnglishKey in range(0, len(WaitEnglishData)):
+                                if WaitEnglishData[waitEnglishKey] == englishData[mathKey]:
+                                    isFind = True
+                                    break
+                            if isFind:
+                                continue
+                        WaitEnglishData.append(englishData[mathKey])
+                print('replace count: ' + str(ReplaceCount) + ', total: ' + str(ReplaceTotal) + ', english count: ' + str(englishDataCount))
                 # save new file
                 fileNewObj.write(newFileData)
             finally:
@@ -207,3 +242,14 @@ if not DeleteDir(DestDir):
 # search dirs
 print('start replace lang data...')
 SearchListFromGame(SrcDir, DestDir)
+# save WaitEnglishData
+fileObj = open('./languages/out.txt', "w+", encoding='UTF-8')
+fileData = ''
+for key in range(0, len(WaitEnglishData)):
+    fileData = str(WaitEnglishData[key]) + '\n' + fileData
+try:
+    # save new file
+    fileObj.write(fileData)
+finally:
+    fileObj.close()
+print('find english word count: ' + str(len(WaitEnglishData)))
