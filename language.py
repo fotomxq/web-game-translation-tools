@@ -25,6 +25,10 @@ Columns = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','
 SrcDir = './game-src'
 # dest dir
 DestDir = './game'
+# allow english take
+AllowWaitEnglish = False
+# allow out location tag
+AllowWaitLocation = False
 
 ##########################################################
 # libs
@@ -132,8 +136,8 @@ WaitReplace = []
 WaitEnglishData = []
 # skip word
 WaitEnglishSkip = ['<', '>', '你', '我', '它']
-# allow english take
-AllowWaitEnglish = False
+# wait location tag
+WaitLocationTags = []
 
 # get language file data
 excel = GetExcel('./languages/' + Language + '.xlsx')
@@ -156,7 +160,7 @@ for sheetKey in range(0, len(excel.sheets())):
 
 # find game-src file list
 def SearchListFromGame(path, newPath):
-    global ReplaceCount, ReplaceTotal, NowReplaceFileSrc, WaitReplace, WaitEnglishData, WaitEnglishSkip
+    global NowReplaceFileSrc
     dirs = os.listdir(path)
     for fileName in dirs:
         fileSrc = path + '/' + fileName
@@ -173,47 +177,39 @@ def SearchListFromGame(path, newPath):
         if os.path.isfile(fileSrc):
             # open file
             fileObj = open(fileSrc, "r+", encoding='UTF-8')
-            fileNewObj = open(fileNewSrc, "w+", encoding='UTF-8')
+            newFileData = ''
             try:
                 fileData = fileObj.read()
-                # replace content
-                ReplaceCount = 0
-                newFileData = ReplaceContent(fileData)
-                # get english data
-                # .*?(?<!\bMr\b)[\.\?](?=\s+(?:[A-Z]|$))
-                pattern = re.compile('.*?(?<!\bMr\b)[\.\?](?=\s+(?:[A-Z]|$))')
-                englishData = pattern.findall(newFileData)
-                englishDataCount = 0
-                if englishData and AllowWaitEnglish:
-                    englishDataCount = len(englishData)
-                    for mathKey in range(0, len(englishData)):
-                        if not englishData[mathKey]:
-                            continue
-                        isFind = False
-                        for mathFindKey in range(0, len(WaitEnglishSkip)):
-                            vFind = re.match(WaitEnglishSkip[mathFindKey], englishData[mathKey])
-                            if vFind:
-                                isFind = True
-                                break
-                        if isFind:
-                            continue
-                        englishData[mathKey] = englishData[mathKey].lstrip()
-                        englishData[mathKey] = englishData[mathKey].rstrip()
-                        if WaitEnglishData:
-                            for waitEnglishKey in range(0, len(WaitEnglishData)):
-                                if WaitEnglishData[waitEnglishKey] == englishData[mathKey]:
-                                    isFind = True
-                                    break
-                            if isFind:
-                                continue
-                        WaitEnglishData.append(englishData[mathKey])
-                print('replace count: ' + str(ReplaceCount) + ', total: ' + str(ReplaceTotal) + ', english count: ' + str(englishDataCount))
-                # save new file
-                fileNewObj.write(newFileData)
+                # get new data
+                newFileData = GetNewContent(fileData)
             finally:
                 fileObj.close()
+            # save new file
+            fileNewObj = open(fileNewSrc, "w+", encoding='UTF-8')
+            try:
+                # save new file data
+                fileNewObj.write(newFileData)
+            finally:
                 fileNewObj.close()
     return True
+
+# get new content
+def GetNewContent(content):
+    global ReplaceCount, ReplaceTotal
+    # replace content
+    ReplaceCount = 0
+    newFileData = ReplaceContent(content)
+    # strip
+    newFileData2 = newFileData.lstrip()
+    newFileData2 = newFileData2.rstrip()
+    # get english data
+    if AllowWaitEnglish:
+        GetEnglishWord(newFileData2)
+    # search location
+    if AllowWaitLocation:
+        GetLocationWord(newFileData)
+    print('replace count: ' + str(ReplaceCount) + ', total: ' + str(ReplaceTotal))
+    return newFileData
 
 # replace content
 # A: src language
@@ -229,6 +225,58 @@ def ReplaceContent(content):
         ReplaceTotal += 1
         # print('replace file: ' + NowReplaceFileSrc + ', src: ' + WaitReplace[key]['src'] + ', new: ' + WaitReplace[key]['dest'])
     return content
+
+# wait english pattern list
+WaitEnglishWordPattern = [r"([A-Z]+)([\w \,\']+...)\."]
+# check AllowWaitEnglish
+def GetEnglishWord(content):
+    global WaitEnglishData, WaitEnglishWordPattern, WaitEnglishSkip
+    englishDataCount = 0
+    for patternVal in WaitEnglishWordPattern:
+        pattern = re.compile(patternVal)
+        englishData = pattern.findall(content)
+        if not englishData:
+            continue
+        englishDataCount = len(englishData)
+        for mathKey in range(0, len(englishData)):
+            if not englishData[mathKey]:
+                continue
+            isFind = False
+            for mathFindKey in range(0, len(WaitEnglishSkip)):
+                vFind = re.match(WaitEnglishSkip[mathFindKey], englishData[mathKey])
+                if vFind:
+                    isFind = True
+                    break
+            if isFind:
+                continue
+            englishData[mathKey] = englishData[mathKey].lstrip()
+            englishData[mathKey] = englishData[mathKey].rstrip()
+            if WaitEnglishData:
+                for waitEnglishKey in range(0, len(WaitEnglishData)):
+                    if WaitEnglishData[waitEnglishKey] == englishData[mathKey]:
+                        isFind = True
+                        break
+                if isFind:
+                    continue
+            WaitEnglishData.append(englishData[mathKey])
+    if englishDataCount > 0:
+        print('find englishDataCount: ' + str(englishDataCount))
+    return True
+
+# get location word
+def GetLocationWord(content):
+    global WaitLocationTags
+    pattern = re.compile(r'(\[{2})([A-Za-z ]+)\|')
+    locationData = pattern.findall(content)
+    locationDataLen = 0
+    if locationData:
+        locationDataLen = len(locationData)
+        for locationKey in range(0, len(locationData)):
+            if len(locationData[locationKey]) > 1:
+                WaitLocationTags.append(locationData[locationKey][1])
+        # print(locationData)
+    if locationDataLen > 0:
+        print('find locationDataLen: ' + str(locationDataLen))
 
 # run
 # copy src to dest dir
@@ -253,3 +301,14 @@ try:
 finally:
     fileObj.close()
 print('find english word count: ' + str(len(WaitEnglishData)))
+# save location tag
+fileObj = open('./languages/location.txt', "w+", encoding='UTF-8')
+fileData = ''
+for key in range(0, len(WaitLocationTags)):
+    fileData = str(WaitLocationTags[key]) + '\n' + fileData
+try:
+    # save new file
+    fileObj.write(fileData)
+finally:
+    fileObj.close()
+print('find location tag count: ' + str(len(WaitLocationTags)))
