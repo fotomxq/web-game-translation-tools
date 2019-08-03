@@ -25,6 +25,7 @@ type UIStruct struct {
 //初始化UI组件
 func (this *UIStruct) Init() error {
 	var err error
+	//初始化ui
 	this.Win = MainWindow{
 		Title:   this.Title,
 		MinSize: Size{600,600},
