@@ -26,7 +26,7 @@ func App(){
 	//启动日志
 	module.Log.SetConfig(configData.Debug)
 	//设定Config
-	ui.Title = "WEB自动化翻译辅助工具"
+	ui.Title = "FTM翻译工具"
 	//启动窗口
 	err = ui.Init()
 	if err != nil{

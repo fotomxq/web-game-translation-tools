@@ -20,51 +20,34 @@ type UIStruct struct {
 	//总体日志数据
 	logData string
 	logDataList []LogType
+	//拆分核心界面
+	// 欢迎界面
+	WinHello Widget
+	// 主界面
 }
 
 //初始化UI组件
 func (this *UIStruct) Init() error {
 	var err error
-	//初始化ui
+	//欢迎界面
+	this.WinHello = Widget{
+		LinkLabel{
+			Text: "欢迎来到" + this.Title,
+		},
+		LinkLabel{
+			Text: "正在载入配置，请稍等...",
+		},
+	}
+	//启动界面
 	this.Win = MainWindow{
-		Title:   this.Title,
-		MinSize: Size{600,600},
+		Title:          this.Title,
+		MinSize:        Size{600, 600},
 		StatusBarItems: this.statusBar,
-		Layout:  VBox{},
+		Layout:         VBox{},
 		Children: []Widget{
-			LinkLabel{
-				Text:   "日志 ",
-			},
-			TextEdit{AssignTo: &this.inputLog},
-			HSplitter{
-				MaxSize:Size{0, 20},
-				Children: []Widget{
-					PushButton{
-						Text: "导入和分析",
-						OnClicked: func() {
-						},
-					},
-					PushButton{
-						Text: "使用本地词库翻译",
-						OnClicked: func() {
-						},
-					},
-					PushButton{
-						Text: "开始在线翻译",
-						OnClicked: func() {
-						},
-					},
-					PushButton{
-						Text: "开始翻译",
-						OnClicked: func() {
-						},
-					},
-				},
-			},
 		},
 	}
 	//更新状态信息
-	this.SetStatusTip("窗口启动完成...")
 	go this.setConfig()
 	//启动窗口
 	_,err = this.Win.Run()
@@ -75,6 +58,39 @@ func (this *UIStruct) Init() error {
 //延迟设定参数
 func (this *UIStruct) setConfig() {
 	time.Sleep(time.Second * 1)
+	//修改UI，进入界面
+	this.Win.Children = []Widget{
+		LinkLabel{
+			Text:   "日志 ",
+		},
+		TextEdit{AssignTo: &this.inputLog},
+		HSplitter{
+			MaxSize:Size{0, 20},
+			Children: []Widget{
+				PushButton{
+					Text: "导入和分析",
+					OnClicked: func() {
+					},
+				},
+				PushButton{
+					Text: "使用本地词库翻译",
+					OnClicked: func() {
+					},
+				},
+				PushButton{
+					Text: "开始在线翻译",
+					OnClicked: func() {
+					},
+				},
+				PushButton{
+					Text: "开始翻译",
+					OnClicked: func() {
+					},
+				},
+			},
+		},
+	}
+	this.SetStatusTip("窗口启动完成...")
 	//装载基本配置
 	this.AppendLog("配置装载完成.")
 	//构建提示信息
