@@ -1,6 +1,1 @@
-/lanauage.spec
-/dist
-/build
-/__pycache__
-/.idea
-/web_game_translation_tools.exe
+/node_modules

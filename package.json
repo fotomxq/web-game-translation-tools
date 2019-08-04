@@ -1,0 +1,24 @@
+{
+  "name": "web-game-translation-tools",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/app/main.js",
+  "dependencies": {
+    "electron": "^6.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fotomxq/web-game-translation-tools.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fotomxq/web-game-translation-tools/issues"
+  },
+  "homepage": "https://github.com/fotomxq/web-game-translation-tools#readme"
+}
